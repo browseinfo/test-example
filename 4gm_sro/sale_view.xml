@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        <record id="sale.action_order_form" model="ir.actions.act_window">
+            <field name="context">{"search_default_user_id":uid}</field>
+        </record>
+
+        <record id="purchase.action_purchase_order_report_all" model="ir.actions.act_window">
+            <field name="context">{'search_default_group_partner_id':1,'search_default_group_product_id': 1, 'search_default_orders': 1, 'group_by_no_leaf':1,'group_by':[]}</field>
+        </record>
+
+        <record id="stock.action_stock_inventory_report" model="ir.actions.act_window">
+            <field name="context">{'contact_display': 'partner', 'search_default_real':1, 'search_default_location_type_internal':1,'search_default_group_product':1,'group_by':[], 'group_by_no_leaf':1}</field>
+        </record> 
+
+        <record id="account_aged_balance_view_inherit" model="ir.ui.view">
+            <field name="name">account.aged.trial.balance.inherit</field>
+            <field name="model">account.aged.trial.balance</field>
+            <field name="inherit_id" ref="account.account_aged_balance_view"/>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <xpath expr="/form/field[@name='direction_selection']" position="after">
+                    <field name="target_move"/>
+                </xpath>
+            </field>
+        </record>
+        <record id="view_order_form_inherit_genius_1_inherit" model="ir.ui.view">
+            <field name="name">sale.order.form.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="geniusmind.view_order_form_inherit_genius_1"/>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <xpath expr="/form/notebook/page[@string='Other Information']/separator[@string='Internal Notes']" position="before">
+					<newline/>
+					<group colspan="4" col="4">
+                    	<field name="channel_id" colspan="2"/>
+                    	<label colspan="2"/>
+					</group>
+                </xpath>
+                <xpath expr="/form/notebook/page[@string='History']" position="after">
+				<page string="Communication &amp; History">
+                   <group colspan="4">
+                       <field colspan="4" name="email_cc" widget="char" size="512"/>
+                   </group>
+                    <field name="message_ids" colspan="4" nolabel="1" mode="tree" readonly="1">
+                        <tree string="History">
+                            <field name="display_text" string="History Information"/>
+                            <field name="email_from" invisible="1"/>
+                            <button
+                                string="Reply" attrs="{'invisible': [('email_from', '=', False)]}"
+                                name="%(mail.action_email_compose_message_wizard)d"
+                                context="{'mail.compose.message.mode':'reply', 'message_id':active_id}"
+                                icon="terp-mail-replied" type="action" />
+                        </tree>
+                    </field>
+                    <button string="Send New Email"
+                        name="%(mail.action_email_compose_message_wizard)d"
+                        icon="terp-mail-message-new" type="action"/>
+                 </page>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_partner_form_inherit" model="ir.ui.view">
+            <field name="name">res.partner.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <xpath expr="/form/notebook/page/field[@name='company_id']" position="after">
+                    <field name="channel_id"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_order_tree_inherit" model="ir.ui.view">
+            <field name="name">sale.order.tree.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_tree"/>
+            <field name="type">tree</field>
+            <field name="arch" type="xml">
+                <xpath expr="/tree/field[@name='state']" position="after">
+                    <field name="channel_id" invisible="1"/>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_sales_order_filter_inherit" model="ir.ui.view">
+            <field name="name">sale.order.list.select.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_sales_order_filter"/>
+            <field name="type">search</field>
+            <field name="arch" type="xml">
+                <xpath expr="/search/group/filter[@string='Order Date']" position="after">
+                    <separator orientation="vertical"/>
+                    <filter string="Channel" icon="terp-stock_effects-object-colorize" domain="[]" context="{'group_by':'channel_id'}"/>
+                </xpath>
+            </field>
+        </record>
+        
+    </data>
+</openerp>

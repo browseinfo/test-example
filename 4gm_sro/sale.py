@@ -1,0 +1,96 @@
+# -*- coding: utf-8 -*-
+##############################################################################
+#
+#    OpenERP, Open Source Management Solution
+#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+from osv import fields, osv
+from tools.translate import _
+import netsvc
+from mail.mail_message import to_email
+
+class sale_order(osv.osv):
+
+    _inherit = ['mail.thread','sale.order']
+    _name = 'sale.order'
+    _order = "id desc"
+    _columns = {
+		'email_cc': fields.text('Global CC', size=252 , help="These email addresses will be added to the CC field of all inbound and outbound emails for this record before being sent. Separate multiple email addresses with a comma"),
+		'message_ids': fields.one2many('mail.message', 'res_id', 'Messages', domain=[('model','=',_name)]),
+		'channel_id' : fields.related( 'partner_id', 'channel_id',  type='many2one',relation='crm.case.channel',string='Channel',store=True, readonly=True),
+        }
+
+    def message_new(self, cr, uid, msg, custom_values=None, context=None):
+        """Automatically calls when new email message arrives"""
+        res_id = super(sale_order, self).message_new(cr, uid, msg, custom_values=custom_values, context=context)
+        subject = msg.get('subject')  or _("No Subject")
+        body = msg.get('body_text')
+
+        msg_from = msg.get('from')
+        priority = msg.get('priority')
+        vals = {
+            'name': subject,
+            'email_from': msg_from,
+            'email_cc': msg.get('cc'),
+            'description': body,
+            'user_id': False,
+        }
+        if priority:
+            vals['priority'] = priority
+        vals.update(self.message_partner_by_email(cr, uid, msg.get('from', False)))
+        self.write(cr, uid, [res_id], vals, context)
+        return res_id
+
+
+
+sale_order()
+
+class res_partner_address(osv.osv):
+    _inherit = 'res.partner.address'
+    _columns = {
+    
+        }
+
+    _sql_constraints = [
+        ('mobile_uniq', 'unique (mobile)', 'This mobile number is already registed with one partner either you can use that partner or use different mobile number'), 
+        ('email_uniq', 'unique (email)', 'This email is already registed with one partner either you can use that partner or use different email-id')
+    ]
+res_partner_address()
+
+class account_tax(osv.osv):
+    _inherit = 'account.tax'
+    _columns = {
+    
+        }
+        
+    def copy(self, cr, uid, id, default={}, context=None, done_list=[], local=False):
+        tax = self.browse(cr, uid, id, context=context)
+        if not default:
+            default = {}
+        default = default.copy()
+        default['name'] = (tax['name'] or '') + '(copy)'
+        return super(account_tax, self).copy(cr, uid, id, default, context=context)
+       
+account_tax()
+
+class res_partner(osv.osv):
+    _inherit = 'res.partner'
+    _columns = {
+        'channel_id':fields.many2one('crm.case.channel', 'Channel'),    
+        }
+
+res_partner()
