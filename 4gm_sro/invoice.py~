@@ -39,6 +39,7 @@ SDa
                 unlink_ids.append(t['id'])
             else:
                 raise osv.except_osv(_('Invalid action !'), _('You can not delete an invoice which is open or paid. We suggest you to refund it instead.'))
+        osv.osv.unlink(self, cr, uid, unlink_ids, context=context)
         return True
 
     def merge_invoice(self, cr, uid, invoices, context=None):
